@@ -1,0 +1,14 @@
+# 真实配置含 API 密钥，切勿提交
+vision-config.json
+see-config.json
+
+# Python
+__pycache__/
+*.pyc
+
+# OS / 编辑器
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

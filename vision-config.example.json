@@ -1,0 +1,7 @@
+{
+  "api_key": "sk-your-key-here",
+  "api_base": "https://api.openai.com/v1",
+  "model": "gpt-4o",
+  "api_format": "openai",
+  "max_tokens": 4096
+}
