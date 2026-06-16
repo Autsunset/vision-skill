@@ -14,6 +14,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 
 SUPPORTED_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tiff", ".tif"}
 CONFIG_FILE = os.path.expanduser("~/.claude/vision-config.json")
+DOTENV_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
 DEFAULT_PROMPT = "Describe this image in detail. Include any visible text, objects, people, layout, colors, and notable visual elements."
 
 OPENAI_DEFAULTS = {
@@ -26,18 +27,38 @@ ANTHROPIC_DEFAULTS = {
 }
 
 
+def load_dotenv():
+    """Load variables from .env file if it exists."""
+    env = {}
+    if os.path.exists(DOTENV_FILE):
+        with open(DOTENV_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, _, value = line.partition("=")
+                    key = key.strip()
+                    value = value.strip().strip('"').strip("'")
+                    if key.startswith("VISION_"):
+                        env[key] = value
+    return env
+
+
 def load_config():
+    # Priority: env vars > .env file > config file
+    dotenv = load_dotenv()
     cfg = {}
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             cfg = json.load(f)
 
-    api_key = os.environ.get("VISION_API_KEY") or cfg.get("api_key", "")
-    api_base = os.environ.get("VISION_API_BASE") or cfg.get("api_base", "")
-    model = os.environ.get("VISION_MODEL") or cfg.get("model", "")
-    api_format = os.environ.get("VISION_API_FORMAT") or cfg.get("api_format", "openai")
+    api_key = os.environ.get("VISION_API_KEY") or dotenv.get("VISION_API_KEY") or cfg.get("api_key", "")
+    api_base = os.environ.get("VISION_API_BASE") or dotenv.get("VISION_API_BASE") or cfg.get("api_base", "")
+    model = os.environ.get("VISION_MODEL") or dotenv.get("VISION_MODEL") or cfg.get("model", "")
+    api_format = os.environ.get("VISION_API_FORMAT") or dotenv.get("VISION_API_FORMAT") or cfg.get("api_format", "openai")
     api_format = api_format.lower().strip()
-    max_tokens = os.environ.get("VISION_MAX_TOKENS") or cfg.get("max_tokens", 4096)
+    max_tokens = os.environ.get("VISION_MAX_TOKENS") or dotenv.get("VISION_MAX_TOKENS") or cfg.get("max_tokens", 4096)
     try:
         max_tokens = int(max_tokens)
     except (TypeError, ValueError):
@@ -180,12 +201,13 @@ def main():
         print(
             "\nUsage:\n"
             "  vision.py <image_path> [prompt]\n\n"
-            "Configuration via environment variables or ~/.claude/vision-config.json:\n"
+            "Configuration via environment variables, .env file, or ~/.claude/vision-config.json:\n"
             "  VISION_API_KEY       API key (required)\n"
             "  VISION_API_BASE      API base URL\n"
             "  VISION_MODEL         Model name\n"
             "  VISION_API_FORMAT    'openai' (default) or 'anthropic'\n"
-            "  VISION_MAX_TOKENS    Max response tokens (default 4096)"
+            "  VISION_MAX_TOKENS    Max response tokens (default 4096)\n\n"
+            "Priority: env vars > skill-folder/.env > ~/.claude/vision-config.json"
         )
         sys.exit(0)
 

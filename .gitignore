@@ -1,6 +1,7 @@
 # 真实配置含 API 密钥，切勿提交
 vision-config.json
 see-config.json
+.env
 
 # Python
 __pycache__/
